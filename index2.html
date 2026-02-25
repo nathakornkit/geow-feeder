@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEOW FEEDER – System Control</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        /* ─── Variables ─────────────────────────────────────────── */
+        :root {
+            --space: #04060f;
+            --deep: #080d1e;
+            --card: #0d1530;
+            --card2: #111c3a;
+            --border: #1e3060;
+            --border2: #263a70;
+            --blue: #3d8ef5;
+            --cyan: #00d4ff;
+            --purple: #a855f7;
+            --pink: #f472b6;
+            --gold: #fbbf24;
+            --green: #34d399;
+            --red: #f87171;
+            --orange: #fb923c;
+            --text: #e2eaff;
+            --muted: #4a6090;
+            --glow-b: 0 0 20px #3d8ef544;
+            --glow-c: 0 0 20px #00d4ff44;
+            --glow-p: 0 0 20px #a855f744;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            background: var(--space);
+            color: var(--text);
+            font-family: 'Sarabun', sans-serif;
+            font-weight: 400;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ─── Starfield ──────────────────────────────────────────── */
+        .starfield {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            border-radius: 50%;
+            background: #fff;
+            animation: twinkle linear infinite;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: .08;
+            }
+
+            50% {
+                opacity: .7;
+            }
+        }
+
+        /* ─── Nebula ─────────────────────────────────────────────── */
+        .nebula {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse 55% 45% at 15% 20%, #3d8ef506, transparent),
+                radial-gradient(ellipse 45% 55% at 85% 80%, #a855f706, transparent),
+                radial-gradient(ellipse 35% 35% at 50% 50%, #00d4ff04, transparent);
+        }
+
+        /* ─── Grid lines ─────────────────────────────────────────── */
+        .grid-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                repeating-linear-gradient(90deg, #ffffff03 0, transparent 1px, transparent 80px),
+                repeating-linear-gradient(0deg, #ffffff03 0, transparent 1px, transparent 80px);
+        }
+
+        /* ─── Wrapper ─────────────────────────────────────────────── */
+        .wrapper {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 28px 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ─── Header ─────────────────────────────────────────────── */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 0 16px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-craft {
+            font-size: 38px;
+            animation: craftHover 4s ease-in-out infinite;
+            filter: drop-shadow(0 0 14px var(--cyan)) drop-shadow(0 0 28px var(--blue));
+        }
+
+        @keyframes craftHover {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(-5deg);
+            }
+
+            50% {
+                transform: translateY(-8px) rotate(5deg);
+            }
+        }
+
+        .logo-text-wrap .logo-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            background: linear-gradient(90deg, var(--cyan), var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% 100%;
+            animation: gradFlow 5s linear infinite;
+        }
+
+        @keyframes gradFlow {
+            0% {
+                background-position: 0%
+            }
+
+            100% {
+                background-position: 200%
+            }
+        }
+
+        .logo-text-wrap .logo-sub {
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 3px;
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+            margin-top: 3px;
+        }
+
+        .logo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #a855f712;
+            border: 1px solid #a855f733;
+            border-radius: 20px;
+            padding: 2px 10px;
+            margin-top: 4px;
+            font-family: 'Space Mono', monospace;
+            font-size: 9px;
+            color: var(--purple);
+            letter-spacing: 1px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Pico status */
+        .pico-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: var(--muted);
+        }
+
+        .pico-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--muted);
+            transition: all .4s;
+        }
+
+        .pico-status.online .pico-dot {
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+        }
+
+        .pico-status.online {
+            color: var(--green);
+            border-color: #34d39933;
+        }
+
+        /* Poll indicator */
+        .poll-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--cyan);
+            opacity: .5;
+            animation: pollPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pollPulse {
+
+            0%,
+            100% {
+                opacity: .2;
+                transform: scale(.8);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        /* Clock */
+        .realtime-clock {
+            font-family: 'Space Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--cyan);
+            text-shadow: 0 0 12px var(--cyan);
+            letter-spacing: 2px;
+        }
+
+        /* User chip */
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            color: var(--blue);
+            letter-spacing: 1px;
+        }
+
+        /* Hdr buttons */
+        .hdr-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all .2s;
+            border: 1px solid;
+            text-decoration: none;
+        }
+
+        .btn-pw {
+            background: transparent;
+            border-color: var(--border);
+            color: var(--muted);
+        }
+
+        .btn-pw:hover {
+            border-color: var(--purple);
+            color: var(--purple);
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #1e1060, #3d1c9a, var(--purple));
+            border-color: var(--purple);
+            color: #fff;
+            box-shadow: var(--glow-p);
+        }
+
+        .btn-logout:hover {
+            box-shadow: 0 0 25px #a855f766;
+        }
+
+        /* ─── Dashboard Grid ──────────────────────────────────────── */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        /* ─── Cards ──────────────────────────────────────────────── */
+        .card {
+            background: linear-gradient(160deg, var(--card), #0a1228);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color .3s, box-shadow .3s;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--cyan)66, transparent);
+            opacity: .6;
+        }
+
+        .card:hover {
+            border-color: var(--border2);
+            box-shadow: var(--glow-b), 0 16px 40px #00000055;
+        }
+
+        .card-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--cyan);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        /* ─── Environment ─────────────────────────────────────────── */
+        .env-values {
+            display: flex;
+            gap: 0;
+        }
+
+        .env-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+        }
+
+        .env-item:first-child {
+            border-right: 1px solid var(--border);
+        }
+
+        .env-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--cyan);
+            text-shadow: 0 0 16px var(--cyan);
+            line-height: 1;
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .env-value.na {
+            color: var(--muted);
+            text-shadow: none;
+            font-size: 22px;
+        }
+
+        .env-label {
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 5px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* ─── Next Feeding ────────────────────────────────────────── */
+        .next-feed-time {
+            font-family: 'Space Mono', monospace;
+            font-size: 50px;
+            font-weight: 700;
+            color: var(--gold);
+            text-shadow: 0 0 28px var(--gold), 0 0 55px #fbbf2444;
+            line-height: 1;
+            letter-spacing: 2px;
+            margin: 4px 0 8px;
+        }
+
+        .next-feed-time.none {
+            font-size: 22px;
+            color: var(--muted);
+            text-shadow: none;
+            letter-spacing: 1px;
+        }
+
+        .last-fed {
+            font-size: 12px;
+            color: var(--muted);
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 1px;
+        }
+
+        .schedule-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .schedule-chip {
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 4px 12px;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--blue);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .schedule-chip .del {
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 12px;
+            transition: color .2s;
+        }
+
+        .schedule-chip .del:hover {
+            color: var(--red);
+        }
+
+        /* ─── Add schedule ────────────────────────────────────────── */
+        .add-schedule {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .time-input {
+            background: #060b1a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 7px 10px;
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            flex: 1;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+        .time-input:focus {
+            border-color: var(--cyan);
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #1a5fd4, var(--blue));
+            border: none;
+            border-radius: 8px;
+            padding: 7px 16px;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all .2s;
+        }
+
+        .btn-add:hover {
+            box-shadow: var(--glow-b);
+        }
+
+        /* ─── Sliders ─────────────────────────────────────────────── */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--cyan) var(--val, 0%), #1e3060 var(--val, 0%));
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--cyan);
+            box-shadow: var(--glow-c);
+            border: 2px solid var(--space);
+            cursor: pointer;
+            transition: transform .15s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* ─── OLED 10-bar display ────────────────────────────────── */
+        .oled-bar {
+            width: 18px;
+            border-radius: 3px 3px 2px 2px;
+            background: #0a1525;
+            border: 1px solid #0d2040;
+            transition: background .2s, box-shadow .2s, height .3s ease;
+            min-height: 4px;
+        }
+
+        .oled-bar.on-low {
+            background: #3d8ef5;
+            box-shadow: 0 0 6px #3d8ef5aa;
+            border-color: #3d8ef5;
+        }
+
+        .oled-bar.on-mid {
+            background: #00d4ff;
+            box-shadow: 0 0 8px #00d4ffaa;
+            border-color: #00d4ff;
+        }
+
+        .oled-bar.on-high {
+            background: #34d399;
+            box-shadow: 0 0 8px #34d399aa;
+            border-color: #34d399;
+        }
+
+        .oled-bar.on-max {
+            background: #fbbf24;
+            box-shadow: 0 0 10px #fbbf24bb;
+            border-color: #fbbf24;
+            animation: maxFlash .5s infinite;
+        }
+
+        @keyframes maxFlash {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .6;
+            }
+        }
+
+        .slider-val {
+            text-align: right;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: var(--cyan);
+            margin-top: 6px;
+        }
+
+        /* ─── LED dots ────────────────────────────────────────────── */
+        .led-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .led-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        .led-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: #0d1530;
+            border: 1px solid var(--border);
+            transition: all .3s;
+        }
+
+        .led-dot.r-on {
+            background: #f87171;
+            box-shadow: 0 0 10px #f8717188;
+        }
+
+        .led-dot.g-on {
+            background: var(--green);
+            box-shadow: 0 0 10px #34d39988;
+        }
+
+        .led-dot.b-on {
+            background: var(--blue);
+            box-shadow: 0 0 10px #3d8ef588;
+        }
+
+        .led-dot.blink {
+            animation: ledBlink .5s infinite;
+        }
+
+        @keyframes ledBlink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .1;
+            }
+        }
+
+        /* ─── Servo ───────────────────────────────────────────────── */
+        .servo-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 10px;
+        }
+
+        .servo-icon {
+            transition: transform 1s;
+        }
+
+        .servo-icon.spin {
+            transform: rotate(90deg);
+            filter: drop-shadow(0 0 6px var(--green));
+        }
+
+        /* ─── Manual Feed ─────────────────────────────────────────── */
+        .btn-feed {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #1a0560, #4422bb, var(--purple));
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-family: 'Space Mono', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            cursor: pointer;
+            box-shadow: var(--glow-p), inset 0 1px 0 #ffffff22;
+            transition: all .2s;
+            text-transform: uppercase;
+        }
+
+        .btn-feed:hover {
+            box-shadow: 0 0 30px #a855f766;
+            transform: translateY(-2px);
+        }
+
+        .btn-feed:active {
+            transform: translateY(0) scale(.98);
+        }
+
+        .btn-feed.active {
+            background: linear-gradient(135deg, #0a3020, #0d6040, var(--green));
+            box-shadow: 0 0 30px #34d39955;
+            animation: feedPulse 1s infinite;
+        }
+
+        @keyframes feedPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px #34d39955;
+            }
+
+            50% {
+                box-shadow: 0 0 40px #34d39999;
+            }
+        }
+
+        /* ─── Buzzer ──────────────────────────────────────────────── */
+        .vol-bar-wrap {
+            height: 6px;
+            background: #060b1a;
+            border-radius: 3px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .vol-bar {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--blue), var(--cyan));
+            transition: width .5s;
+            box-shadow: var(--glow-c);
+        }
+
+        /* ─── Food Level ──────────────────────────────────────────── */
+        .food-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .food-circle {
+            width: 86px;
+            height: 86px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            border: 2px solid var(--border);
+            transition: all .5s;
+            position: relative;
+        }
+
+        .food-circle::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 1px solid transparent;
+            transition: all .5s;
+        }
+
+        .food-circle.full {
+            background: radial-gradient(circle, #1e6640, #0f3820);
+            border-color: var(--green);
+            box-shadow: 0 0 25px #34d39944;
+        }
+
+        .food-circle.full::after {
+            border-color: #34d39922;
+        }
+
+        .food-circle.medium {
+            background: radial-gradient(circle, #6b4c10, #3a2808);
+            border-color: var(--gold);
+            box-shadow: 0 0 25px #fbbf2444;
+        }
+
+        .food-circle.low {
+            background: radial-gradient(circle, #6b1a1a, #3a0808);
+            border-color: var(--red);
+            box-shadow: 0 0 25px #f8717144;
+            animation: lowPulse 2s infinite;
+        }
+
+        .food-circle.empty {
+            background: radial-gradient(circle, #1e0808, #0a0404);
+            border-color: #4a1515;
+            box-shadow: 0 0 15px #f8717122;
+        }
+
+        .food-circle.checking {
+            background: radial-gradient(circle, #1a2040, #0d1228);
+            border-color: var(--muted);
+        }
+
+        @keyframes lowPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px #f8717144;
+            }
+
+            50% {
+                box-shadow: 0 0 40px #f8717188;
+            }
+        }
+
+        .food-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .food-label.full {
+            color: var(--green);
+        }
+
+        .food-label.medium {
+            color: var(--gold);
+        }
+
+        .food-label.low,
+        .food-label.empty {
+            color: var(--red);
+        }
+
+        .food-label.checking {
+            color: var(--muted);
+        }
+
+        .food-dist {
+            font-size: 11px;
+            color: var(--muted);
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 1px;
+        }
+
+        /* ─── POPUP ───────────────────────────────────────────────── */
+        .popup-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: #00000099;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .3s;
+        }
+
+        .popup-overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .popup {
+            background: linear-gradient(160deg, var(--card), var(--card2));
+            border: 1px solid var(--border2);
+            border-radius: 24px;
+            padding: 36px 40px;
+            max-width: 460px;
+            width: 90%;
+            box-shadow: 0 30px 80px #00000099, 0 0 0 1px #00d4ff10;
+            text-align: center;
+            transform: scale(.9);
+            transition: transform .3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .popup::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), var(--purple), transparent);
+            border-radius: 24px 24px 0 0;
+        }
+
+        .popup-overlay.show .popup {
+            transform: scale(1);
+        }
+
+        .popup-emoji {
+            font-size: 50px;
+            margin-bottom: 14px;
+            filter: drop-shadow(0 0 12px var(--cyan));
+        }
+
+        .popup-title {
+            font-family: 'Space Mono', monospace;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--cyan);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .popup-body {
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.8;
+            margin-bottom: 6px;
+        }
+
+        .popup-hint {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 24px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .popup-btns {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .popup-btn-c {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 24px;
+            color: var(--muted);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all .2s;
+        }
+
+        .popup-btn-c:hover {
+            border-color: var(--cyan);
+            color: var(--text);
+        }
+
+        .popup-btn-ok {
+            background: linear-gradient(135deg, #1a0560, #4422bb, var(--purple));
+            border: none;
+            border-radius: 10px;
+            padding: 10px 24px;
+            color: #fff;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            box-shadow: var(--glow-p);
+            transition: opacity .2s;
+        }
+
+        .popup-btn-ok:hover {
+            opacity: .85;
+        }
+
+        .popup-logout-btn {
+            background: linear-gradient(135deg, #4a0a0a, #c01010, var(--red)) !important;
+            box-shadow: 0 0 20px #f8717133 !important;
+        }
+
+        /* ─── Toast ───────────────────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            background: var(--card2);
+            border: 1px solid var(--cyan);
+            border-radius: 12px;
+            padding: 10px 24px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: var(--cyan);
+            opacity: 0;
+            pointer-events: none;
+            transition: all .3s;
+            z-index: 2000;
+            box-shadow: var(--glow-c);
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ─── Scrollbar ───────────────────────────────────────────── */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--space);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        /* ─── Responsive ──────────────────────────────────────────── */
+        @media(max-width:1024px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width:640px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .wrapper {
+                padding: 0 14px 30px;
+            }
+        }
+
+        /* ─── Entry animations ────────────────────────────────────── */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(22px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: fadeUp .5s ease both;
+        }
+
+        .card:nth-child(1) {
+            animation-delay: .04s;
+        }
+
+        .card:nth-child(2) {
+            animation-delay: .08s;
+        }
+
+        .card:nth-child(3) {
+            animation-delay: .12s;
+        }
+
+        .card:nth-child(4) {
+            animation-delay: .16s;
+        }
+
+        .card:nth-child(5) {
+            animation-delay: .20s;
+        }
+
+        .card:nth-child(6) {
+            animation-delay: .24s;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background -->
+    <div class="starfield" id="starfield"></div>
+    <div class="nebula"></div>
+    <div class="grid-bg"></div>
+
+    <div class="wrapper">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <div class="logo-craft">🛸</div>
+                <div class="logo-text-wrap">
+                    <div class="logo-title">GEOW FEEDER</div>
+                    <div class="logo-sub">Automatic Dog Feeding System</div>
+                    <div class="logo-badge">✨ import antigravity</div>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <!-- Poll indicator -->
+                <div class="pico-status" id="picoStatus">
+                    <div class="pico-dot"></div>
+                    <span id="picoLabel">PICO OFFLINE</span>
+                </div>
+                <div title="HTTP Polling active"
+                    style="display:flex;align-items:center;gap:5px;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);">
+                    <div class="poll-dot" id="pollDot"></div>POLLING
+                </div>
+                <div class="realtime-clock" id="clock">--:--:--</div>
+                <div class="user-chip">👾 <span id="displayName">{{ display_name }}</span></div>
+                <a href="/change-password" class="hdr-btn btn-pw" title="เปลี่ยนรหัสผ่าน">🔐 <span
+                        class="label">Password</span></a>
+                <button class="hdr-btn btn-logout" onclick="showLogout()">🚀 Logout</button>
+            </div>
+        </header>
+
+        <!-- Grid -->
+        <div class="grid">
+
+            <!-- 1. Environment -->
+            <div class="card">
+                <div class="card-title">🌡️ Environment</div>
+                <div class="env-values">
+                    <div class="env-item">
+                        <div class="env-value na" id="tempVal">--</div>
+                        <div class="env-label">Temperature °C</div>
+                    </div>
+                    <div class="env-item">
+                        <div class="env-value na" id="humVal">--</div>
+                        <div class="env-label">Humidity %</div>
+                    </div>
+                </div>
+                <div class="led-row">
+                    <div class="led-item">
+                        <div class="led-dot" id="ledRed"></div>RED
+                    </div>
+                    <div class="led-item">
+                        <div class="led-dot" id="ledGreen"></div>GREEN
+                    </div>
+                    <div class="led-item">
+                        <div class="led-dot" id="ledBlue"></div>BLUE
+                    </div>
+                </div>
+                <div class="servo-status">
+                    <span class="servo-icon" id="servoIcon">⚙️</span>
+                    <span id="servoLabel">SERVO STANDBY</span>
+                </div>
+            </div>
+
+            <!-- 2. Next Feeding -->
+            <div class="card">
+                <div class="card-title">⏰ Next Feeding</div>
+                <div class="next-feed-time none" id="nextFeedTime">ยังไม่ได้ตั้งเวลา</div>
+                <div class="last-fed" id="lastFed">Last fed: —</div>
+                <div class="schedule-list" id="scheduleList"></div>
+                <div class="add-schedule">
+                    <input type="time" class="time-input" id="timeInput">
+                    <button class="btn-add" onclick="addSchedule()">+ เพิ่ม</button>
+                </div>
+            </div>
+
+            <!-- 3. Light Intensity -->
+            <div class="card">
+                <div class="card-title">☀️ Light Intensity (LDR)</div>
+
+                <!-- Big number display -->
+                <div style="text-align:center;margin:10px 0 16px;">
+                    <div id="ldrVal" style="font-family:'Space Mono',monospace;font-size:52px;font-weight:700;
+          color:var(--cyan);text-shadow:0 0 24px var(--cyan);line-height:1;transition:all .5s;">--</div>
+                    <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--muted);
+          letter-spacing:3px;text-transform:uppercase;margin-top:4px;">Percent (%)</div>
+                </div>
+
+                <!-- Progress bar display only -->
+                <div style="display:flex;align-items:center;justify-content:space-between;
+        font-family:'Space Grotesk',sans-serif;font-size:10px;color:var(--muted);
+        letter-spacing:1px;margin-bottom:6px;">
+                    <span>🌑 Dark</span><span>🌕 Bright</span>
+                </div>
+                <div style="height:10px;background:#060b1a;border-radius:5px;
+        border:1px solid var(--border);overflow:hidden;">
+                    <div id="ldrBar" style="height:100%;width:0%;border-radius:5px;
+          background:linear-gradient(90deg,var(--blue),var(--cyan),var(--gold));
+          box-shadow:0 0 10px var(--cyan);transition:width .8s ease;"></div>
+                </div>
+                <div style="position:relative;height:18px;margin-top:2px;">
+                    <div style="position:absolute;left:50%;transform:translateX(-50%);
+          font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;">▲ 50%</div>
+                </div>
+
+                <div style="margin-top:6px;font-size:11px;color:var(--muted);
+        font-family:'Space Grotesk',sans-serif;letter-spacing:1px;line-height:1.8;">
+                    🔵 Blue LED สว่างเมื่อ LDR &gt; 50%<br>
+                    <span style="color:#2a3a5a;">วัดค่าทุก 5 นาที · Read only</span>
+                </div>
+            </div>
+
+            <!-- 4. Manual Feed -->
+            <div class="card">
+                <div class="card-title">🍖 Manual Feed</div>
+                <button class="btn-feed" id="btnFeed" onclick="onManualFeed()">
+                    🛸 FEED NOW
+                </button>
+                <div
+                    style="margin-top:14px;font-size:12px;color:var(--muted);font-family:'Space Grotesk',sans-serif;line-height:1.7;letter-spacing:.3px;">
+                    ⚠️ กดเพื่อให้อาหารทันที<br>
+                    <span style="color:#2a3a5a;">Servo หมุน 90° &nbsp;→&nbsp; ค้าง 7 วิ &nbsp;→&nbsp; กลับ 0°</span>
+                </div>
+            </div>
+
+            <!-- 5. Buzzer Volume -->
+            <div class="card">
+                <div class="card-title">🔊 Buzzer Volume</div>
+
+                <!-- OLED-style 10-bar display -->
+                <div style="background:#020408;border:1px solid #00d4ff33;border-radius:12px;
+        padding:16px 14px 12px;margin-bottom:14px;font-family:'Space Mono',monospace;">
+
+                    <!-- Title bar like OLED header -->
+                    <div style="font-size:9px;color:#00d4ff88;letter-spacing:3px;
+          text-transform:uppercase;margin-bottom:10px;text-align:center;">
+                        ── BUZZER VOL ──
+                    </div>
+
+                    <!-- 10 segment bars -->
+                    <div style="display:flex;align-items:flex-end;justify-content:center;
+          gap:5px;height:54px;">
+                        <div class="oled-bar" id="obar1" data-idx="1"></div>
+                        <div class="oled-bar" id="obar2" data-idx="2"></div>
+                        <div class="oled-bar" id="obar3" data-idx="3"></div>
+                        <div class="oled-bar" id="obar4" data-idx="4"></div>
+                        <div class="oled-bar" id="obar5" data-idx="5"></div>
+                        <div class="oled-bar" id="obar6" data-idx="6"></div>
+                        <div class="oled-bar" id="obar7" data-idx="7"></div>
+                        <div class="oled-bar" id="obar8" data-idx="8"></div>
+                        <div class="oled-bar" id="obar9" data-idx="9"></div>
+                        <div class="oled-bar" id="obar10" data-idx="10"></div>
+                    </div>
+
+                    <!-- Tick labels -->
+                    <div style="display:flex;justify-content:space-between;
+          font-size:8px;color:#2a4060;letter-spacing:0;margin-top:5px;padding:0 2px;">
+                        <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+                        <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                    </div>
+
+                    <!-- Big number -->
+                    <div style="text-align:center;margin-top:10px;border-top:1px solid #00d4ff22;padding-top:8px;">
+                        <span id="buzzerVal" style="font-size:32px;font-weight:700;color:var(--cyan);
+            text-shadow:0 0 16px var(--cyan);">50</span>
+                        <span style="font-size:13px;color:#2a4060;">%</span>
+                    </div>
+                </div>
+
+                <!-- Web slider to adjust from browser -->
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:10px;
+        color:var(--muted);letter-spacing:1px;margin-bottom:6px;">
+                    🌐 WEB CONTROL
+                </div>
+                <input type="range" min="0" max="100" value="50" id="buzzerSlider" oninput="onBuzzerChange(this.value)">
+
+                <!-- Pot source indicator -->
+                <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;
+        font-size:10px;font-family:'Space Mono',monospace;letter-spacing:1px;">
+                    <span style="color:var(--muted);">🎚️ POT PHYSICAL</span>
+                    <span style="color:var(--cyan);" id="potVal">--</span><span style="color:var(--muted);">%</span>
+                </div>
+                <div style="margin-top:4px;font-size:10px;color:#2a3a5a;
+        font-family:'Space Grotesk',sans-serif;letter-spacing:.5px;">
+                    Potentiometer → OLED 10 bars → sync เว็บ
+                </div>
+            </div>
+
+            <!-- 6. Food Level -->
+            <div class="card">
+                <div class="card-title">🥘 Food Level</div>
+                <div class="food-visual">
+                    <div class="food-circle checking" id="foodCircle">❓</div>
+                    <div class="food-label checking" id="foodLabel">CHECKING...</div>
+                </div>
+                <div class="food-dist" id="foodDist">Distance: -- cm</div>
+            </div>
+
+        </div><!-- /grid -->
+    </div><!-- /wrapper -->
+
+    <!-- POPUP: Manual Feed Warning -->
+    <div class="popup-overlay" id="popupFeed">
+        <div class="popup">
+            <div class="popup-emoji">🛸</div>
+            <div class="popup-title">ต้องตั้งเวลาก่อน!</div>
+            <div class="popup-body">กรุณาตั้งเวลาให้อาหารอัตโนมัติใหม่ก่อน<br>แล้วจึงกด Manual Feed ได้</div>
+            <div class="popup-hint">หลังกด Manual Feed ตารางเวลาจะถูก reset<br>กรุณาตั้งเวลาถัดไปใหม่หลัง Feed เสร็จ
+            </div>
+            <div class="popup-btns">
+                <button class="popup-btn-c" onclick="closePopup('popupFeed')">ยกเลิก</button>
+                <button class="popup-btn-ok" onclick="confirmFeed()">🍖 Feed เลย!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP: Logout Confirm -->
+    <div class="popup-overlay" id="popupLogout">
+        <div class="popup">
+            <div class="popup-emoji">🚀</div>
+            <div class="popup-title" style="color:var(--red);">ออกจากระบบ?</div>
+            <div class="popup-body">ต้องการออกจากระบบ GEOW FEEDER ใช่หรือไม่?</div>
+            <div class="popup-hint">ระบบจะยังคง polling ต่อในเบื้องหลัง</div>
+            <div class="popup-btns">
+                <button class="popup-btn-c" onclick="closePopup('popupLogout')">ยกเลิก</button>
+                <button class="popup-btn-ok popup-logout-btn" onclick="window.location.href='/logout'">🚀
+                    ออกจากระบบ</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ─── Starfield ────────────────────────────────────────────
+        (function () {
+            const sf = document.getElementById('starfield');
+            for (let i = 0; i < 180; i++) {
+                const s = document.createElement('div'); s.className = 'star';
+                const sz = Math.random() * 2 + .3;
+                s.style.cssText = `width:${sz}px;height:${sz}px;
+      left:${Math.random() * 100}%;top:${Math.random() * 100}%;
+      animation-duration:${Math.random() * 5 + 2}s;
+      animation-delay:${Math.random() * 5}s;`;
+                sf.appendChild(s);
+            }
+        })();
+
+        // ─── Clock ────────────────────────────────────────────────
+        function updateClock() {
+            const n = new Date(), p = v => String(v).padStart(2, '0');
+            document.getElementById('clock').textContent = `${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // ─── HTTP Polling (replaces WebSocket for PythonAnywhere) ─
+        let schedules = [];
+        let pollActive = true;
+
+        async function poll() {
+            const dot = document.getElementById('pollDot');
+            dot.style.opacity = '1';
+            try {
+                const r = await fetch('/api/state');
+                if (r.status === 401) { window.location.href = '/login'; return; }
+                const d = await r.json();
+                updateUI(d);
+            } catch (e) { console.warn('Poll error', e); }
+            dot.style.opacity = '.3';
+            if (pollActive) setTimeout(poll, 2000);  // poll every 2 seconds
+        }
+        poll();
+
+        // ─── UI Update ────────────────────────────────────────────
+        function updateUI(d) {
+            // Temp / Humidity
+            const te = document.getElementById('tempVal');
+            const he = document.getElementById('humVal');
+            if (d.temperature != null) { te.textContent = d.temperature.toFixed(1); te.classList.remove('na'); }
+            else { te.textContent = '--'; te.classList.add('na'); }
+            if (d.humidity != null) { he.textContent = d.humidity.toFixed(1); he.classList.remove('na'); }
+            else { he.textContent = '--'; he.classList.add('na'); }
+
+            // LEDs
+            setLed('ledRed', d.red_led, 'r-on', d.red_led);
+            setLed('ledGreen', d.green_led, 'g-on', false);
+            setLed('ledBlue', d.blue_led, 'b-on', false);
+
+            // Servo
+            const si = document.getElementById('servoIcon'), sl = document.getElementById('servoLabel');
+            if (d.servo_active) { si.classList.add('spin'); sl.textContent = 'SERVO FEEDING...'; }
+            else { si.classList.remove('spin'); sl.textContent = 'SERVO STANDBY'; }
+
+            // LDR (display only — no slider)
+            if (d.ldr_percent != null) {
+                const v = Math.round(d.ldr_percent);
+                document.getElementById('ldrVal').textContent = v;
+                document.getElementById('ldrBar').style.width = v + '%';
+            }
+
+            // Pot
+            if (d.potentiometer != null)
+                document.getElementById('potVal').textContent = Math.round(d.potentiometer);
+
+            // Buzzer
+            const bv = d.buzzer_volume ?? 50;
+            document.getElementById('buzzerSlider').value = bv;
+            document.getElementById('buzzerVal').textContent = Math.round(bv);
+            updateSliderBg('buzzerSlider', bv);
+            updateOledBars(bv);
+
+            // Schedule
+            if (d.schedule) { schedules = d.schedule; renderSchedule(); }
+
+            // Last fed
+            document.getElementById('lastFed').textContent = 'Last fed: ' + (d.last_fed || '—');
+
+            // Food
+            setFoodLevel(d.food_level, d.distance);
+
+            // Pico
+            setPicoStatus(d.pico_online);
+        }
+
+        function setLed(id, on, cls, blink) {
+            const el = document.getElementById(id);
+            el.className = 'led-dot';
+            if (on) { el.classList.add(cls); if (blink) el.classList.add('blink'); }
+        }
+
+        function setFoodLevel(level, dist) {
+            const c = document.getElementById('foodCircle'), l = document.getElementById('foodLabel');
+            const distEl = document.getElementById('foodDist');
+            const icons = { full: '🟢', medium: '🟡', low: '🔴', empty: '⬛', checking: '❓' };
+            const labels = { full: 'FULL 🐾', medium: 'MEDIUM', low: 'LOW ⚠️', empty: 'EMPTY ❌', checking: 'CHECKING...' };
+            c.className = 'food-circle ' + (level || 'checking');
+            c.textContent = icons[level] || '❓';
+            l.className = 'food-label ' + (level || 'checking');
+            l.textContent = labels[level] || 'CHECKING...';
+            distEl.textContent = dist != null ? `Distance: ${dist} cm` : 'Distance: -- cm';
+        }
+
+        function setPicoStatus(online) {
+            const el = document.getElementById('picoStatus'), lb = document.getElementById('picoLabel');
+            el.classList.toggle('online', !!online);
+            lb.textContent = online ? 'PICO ONLINE' : 'PICO OFFLINE';
+        }
+
+        // ─── Schedule ─────────────────────────────────────────────
+        function renderSchedule() {
+            const list = document.getElementById('scheduleList');
+            const nextEl = document.getElementById('nextFeedTime');
+            list.innerHTML = '';
+            if (!schedules.length) { nextEl.textContent = 'ยังไม่ได้ตั้งเวลา'; nextEl.className = 'next-feed-time none'; return; }
+            const now = new Date(); const nm = now.getHours() * 60 + now.getMinutes();
+            const sorted = [...schedules].sort();
+            const next = sorted.find(t => { const [h, m] = t.split(':').map(Number); return h * 60 + m > nm; }) || sorted[0];
+            nextEl.textContent = next || '--:--'; nextEl.className = 'next-feed-time';
+            schedules.forEach(t => {
+                const chip = document.createElement('div'); chip.className = 'schedule-chip';
+                chip.innerHTML = `⏰ ${t} <span class="del" onclick="removeSchedule('${t}')">✕</span>`;
+                list.appendChild(chip);
+            });
+        }
+
+        function addSchedule() {
+            const inp = document.getElementById('timeInput'), val = inp.value;
+            if (!val) { showToast('กรุณาเลือกเวลา'); return; }
+            if (schedules.includes(val)) { showToast('มีเวลานี้แล้ว'); return; }
+            schedules.push(val); saveSchedule(); inp.value = '';
+        }
+        function removeSchedule(t) { schedules = schedules.filter(s => s !== t); saveSchedule(); }
+        function saveSchedule() {
+            fetch('/api/schedule', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ times: schedules })
+            })
+                .then(r => r.json()).then(d => { schedules = d.times; renderSchedule(); showToast('✓ บันทึกตารางแล้ว'); });
+        }
+
+        // ─── Manual Feed ──────────────────────────────────────────
+        function onManualFeed() { document.getElementById('popupFeed').classList.add('show'); }
+        function confirmFeed() {
+            closePopup('popupFeed');
+            fetch('/api/manual_feed', { method: 'POST' }).then(r => r.json()).then(() => {
+                showToast('🍖 กำลังให้อาหาร...');
+                document.getElementById('btnFeed').classList.add('active');
+                setTimeout(() => document.getElementById('btnFeed').classList.remove('active'), 8000);
+                schedules = []; saveSchedule();
+            });
+        }
+
+        // ─── Logout ───────────────────────────────────────────────
+        function showLogout() { document.getElementById('popupLogout').classList.add('show'); }
+        function closePopup(id) { document.getElementById(id).classList.remove('show'); }
+        document.querySelectorAll('.popup-overlay').forEach(el => {
+            el.addEventListener('click', e => { if (e.target === el) el.classList.remove('show'); });
+        });
+
+        // ─── OLED 10-bar updater ──────────────────────────────────
+        function updateOledBars(pct) {
+            const bars = Math.round((pct / 100) * 10);  // 0-10
+            for (let i = 1; i <= 10; i++) {
+                const el = document.getElementById('obar' + i);
+                if (!el) continue;
+                // Height: shorter bars on left, taller on right (like a VU meter)
+                const h = 16 + (i * 4);   // 20px to 56px
+                el.style.height = h + 'px';
+                el.className = 'oled-bar';
+                if (i <= bars) {
+                    if (i <= 3) el.classList.add('on-low');
+                    else if (i <= 6) el.classList.add('on-mid');
+                    else if (i <= 8) el.classList.add('on-high');
+                    else el.classList.add('on-max');
+                }
+            }
+        }
+
+        // ─── Buzzer ───────────────────────────────────────────────
+        let bTimer = null;
+        function onBuzzerChange(val) {
+            const v = Math.round(val);
+            document.getElementById('buzzerVal').textContent = v;
+            updateSliderBg('buzzerSlider', v);
+            updateOledBars(v);
+            clearTimeout(bTimer);
+            bTimer = setTimeout(() => {
+                fetch('/api/buzzer_volume', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ volume: parseInt(val) })
+                });
+            }, 300);
+        }
+        function updateSliderBg(id, val) {
+            document.getElementById(id).style.setProperty('--val', val + '%');
+        }
+
+        // ─── Toast ────────────────────────────────────────────────
+        let tTimer = null;
+        function showToast(msg) {
+            const el = document.getElementById('toast');
+            el.textContent = msg; el.classList.add('show');
+            clearTimeout(tTimer); tTimer = setTimeout(() => el.classList.remove('show'), 2800);
+        }
+    </script>
+</body>
+
+</html>
